@@ -5,7 +5,10 @@ const mysql = require('mysql2');
 const app = express();
 const PORT = 5000;
 
-app.use(cors());
+app.use(cors({
+  origin: ['http://ldr.local:5173', 'http://localhost:5173'],
+  credentials: true
+}));
 app.use(express.json());
 
 // Konfigurasi database

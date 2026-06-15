@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = 'http://ldr.local:5000/api';
 
 function CashierDashboard({ user, onLogout }) {
   const [products, setProducts] = useState([]);

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 function ProductManagement({ user }) {
   const [products, setProducts] = useState([]);
@@ -94,16 +94,30 @@ function ProductManagement({ user }) {
   };
 
   const handleDelete = async (id, nama) => {
-    if (window.confirm(`Hapus produk "${nama}"?`)) {
-      try {
-        await axios.delete(`${API_URL}/products/${id}`);
-        toast.success('Produk dihapus!');
-        fetchProducts();
-      } catch (error) {
-        toast.error('Gagal menghapus produk');
-      }
-    }
-  };
+  // Konfirmasi pertama
+  const userConfirmed = window.confirm(
+    `⚠️ PERINGATAN!\n\nAnda akan menghapus produk "${nama}".\n\n` +
+    `Produk yang dihapus TIDAK BISA dikembalikan.\n\n` +
+    `Apakah Anda yakin ingin menghapus?`
+  );
+  
+  if (!userConfirmed) return;
+  
+  // Konfirmasi kedua (double check)
+  const doubleConfirm = window.confirm(
+    `Hapus permanen produk "${nama}"?\n\nKlik OK untuk menghapus.`
+  );
+  
+  if (!doubleConfirm) return;
+  
+  try {
+    await axios.delete(`${API_URL}/products/${id}`);
+    toast.success(`Produk "${nama}" berhasil dihapus!`);
+    fetchProducts();
+  } catch (error) {
+    toast.error('Gagal menghapus produk');
+  }
+};
 
   const handleRestock = async () => {
     if (!restockAmount || parseInt(restockAmount) <= 0) {

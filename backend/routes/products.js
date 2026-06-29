@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../database');
+const { body, validationResult } = require('express-validator');
 
 // GET semua produk
 router.get('/', async (req, res) => {
@@ -72,36 +73,28 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-// POST tambah stok (restock)
-router.post('/:id/restock', async (req, res) => {
-  const { id } = req.params;
-  const { jumlah_tambah, admin_name, keterangan } = req.body;
+// POST tambah produk dengan validasi
+router.post('/', [
+  body('nama_produk').notEmpty().trim().escape().withMessage('Nama produk wajib diisi'),
+  body('kategori').notEmpty().trim().escape().withMessage('Kategori wajib diisi'),
+  body('harga').isInt({ min: 0 }).withMessage('Harga harus angka positif'),
+  body('stok').optional().isInt({ min: 0 }).withMessage('Stok harus angka positif'),
+  body('min_stok').optional().isInt({ min: 0 }).withMessage('Minimal stok harus angka positif')
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
   
-  const connection = await db.getConnection();
+  const { nama_produk, kategori, kode_ukuran, harga, stok, min_stok } = req.body;
   try {
-    await connection.beginTransaction();
-    
-    // Ambil stok sekarang
-    const [product] = await connection.query('SELECT nama_produk, stok FROM products WHERE id = ?', [id]);
-    const stok_sebelum = product[0].stok;
-    const stok_sesudah = stok_sebelum + parseInt(jumlah_tambah);
-    
-    // Update stok
-    await connection.query('UPDATE products SET stok = ? WHERE id = ?', [stok_sesudah, id]);
-    
-    // Catat log
-    await connection.query(
-      'INSERT INTO log_stok (product_id, product_name, perubahan, stok_sebelum, stok_sesudah, keterangan, admin_name) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [id, product[0].nama_produk, jumlah_tambah, stok_sebelum, stok_sesudah, keterangan || 'Restock', admin_name]
+    const [result] = await db.query(
+      'INSERT INTO products (nama_produk, kategori, kode_ukuran, harga, stok, min_stok) VALUES (?, ?, ?, ?, ?, ?)',
+      [nama_produk, kategori, kode_ukuran, harga, stok || 0, min_stok || 5]
     );
-    
-    await connection.commit();
-    res.json({ success: true, stok_sebelum, stok_sesudah });
+    res.json({ success: true, id: result.insertId });
   } catch (error) {
-    await connection.rollback();
     res.status(500).json({ error: error.message });
-  } finally {
-    connection.release();
   }
 });
 

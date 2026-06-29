@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
-const API_URL = 'http://ldr.local:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 function CashierDashboard({ user, onLogout }) {
   const [products, setProducts] = useState([]);
@@ -16,7 +16,7 @@ function CashierDashboard({ user, onLogout }) {
   const [transactionData, setTransactionData] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [activeTab, setActiveTab] = useState('cashier');
-  
+  const [loadingProducts, setLoadingProducts] = useState(true);
   // State untuk Keuangan
   const [ringkasan, setRingkasan] = useState({
     penjualan: { cash: 0, qris: 0, total: 0 },
@@ -37,13 +37,16 @@ function CashierDashboard({ user, onLogout }) {
   }, [refreshKeuangan]);
 
   const fetchProducts = async () => {
-    try {
-      const response = await axios.get(`${API_URL}/products`);
-      setProducts(response.data);
-    } catch (error) {
-      toast.error('Gagal mengambil data produk');
-    }
-  };
+  setLoadingProducts(true);
+  try {
+    const response = await axios.get(`${API_URL}/products`);
+    setProducts(response.data);
+  } catch (error) {
+    toast.error('Gagal mengambil data produk');
+  } finally {
+    setLoadingProducts(false);
+  }
+};
 
   const fetchCategories = async () => {
     try {
@@ -115,18 +118,32 @@ function CashierDashboard({ user, onLogout }) {
   };
 
   const addToCart = (product) => {
-    const existingItem = cart.find(item => item.id === product.id);
-    if (existingItem) {
-      setCart(cart.map(item =>
-        item.id === product.id
-          ? { ...item, quantity: item.quantity + 1, subtotal: (item.quantity + 1) * item.harga }
-          : item
-      ));
-    } else {
-      setCart([...cart, { ...product, quantity: 1, subtotal: product.harga }]);
-    }
-    toast.success(`Ditambahkan: ${product.nama_produk}`);
-  };
+  // CEK STOK SEBELUM MENAMBAH KE KERANJANG
+  if (product.stok <= 0) {
+    toast.error(`Maaf, stok ${product.nama_produk} habis!`);
+    return;
+  }
+  
+  // Cek stok jika sudah ada di keranjang
+  const existingItem = cart.find(item => item.id === product.id);
+  const currentQuantity = existingItem ? existingItem.quantity : 0;
+  
+  if (currentQuantity + 1 > product.stok) {
+    toast.error(`Stok ${product.nama_produk} tidak mencukupi! (Sisa: ${product.stok})`);
+    return;
+  }
+  
+  if (existingItem) {
+    setCart(cart.map(item =>
+      item.id === product.id
+        ? { ...item, quantity: item.quantity + 1, subtotal: (item.quantity + 1) * item.harga }
+        : item
+    ));
+  } else {
+    setCart([...cart, { ...product, quantity: 1, subtotal: product.harga }]);
+  }
+  toast.success(`Ditambahkan: ${product.nama_produk}`);
+};
 
   const updateQuantity = (id, newQuantity) => {
     if (newQuantity < 1) {
@@ -355,19 +372,38 @@ function CashierDashboard({ user, onLogout }) {
                 {categories.map(cat => <button key={cat} onClick={() => setSelectedCategory(cat)} className={`px-4 py-2 rounded-lg ${selectedCategory === cat ? 'bg-purple-600 text-white' : 'bg-gray-100'}`}>{cat}</button>)}
               </div>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {filteredProducts.map(product => (
-                <div key={product.id} className="bg-white rounded-xl shadow-md p-4 hover:shadow-lg transition-all">
-                  <div className="flex justify-between items-start">
-                    <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full">{product.kategori}</span>
-                    {product.kode_ukuran && <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">{product.kode_ukuran}</span>}
-                  </div>
-                  <h3 className="font-bold mt-2 text-gray-800">{product.nama_produk}</h3>
-                  <p className="text-purple-600 font-bold text-lg mt-1">{formatPrice(product.harga)}</p>
-                  <button onClick={() => addToCart(product)} className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-2 rounded-lg mt-2 hover:from-purple-700 transition-all">+ Tambah</button>
-                </div>
-              ))}
-            </div>
+          {loadingProducts ? (
+  <div className="text-center py-8 col-span-2 md:col-span-3">
+    <div className="text-4xl mb-2">🔄</div>
+    <p className="text-gray-500">Memuat produk...</p>
+  </div>
+) : (
+  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+    {filteredProducts.map(product => (
+      <div key={product.id} className="bg-white rounded-xl shadow-md p-4 hover:shadow-lg transition-all">
+        <div className="flex justify-between items-start">
+          <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full">{product.kategori}</span>
+          {product.kode_ukuran && <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">{product.kode_ukuran}</span>}
+        </div>
+        <h3 className="font-bold mt-2 text-gray-800">{product.nama_produk}</h3>
+        <p className="text-purple-600 font-bold text-lg mt-1">{formatPrice(product.harga)}</p>
+        
+        {/* TAMPILAN STOK */}
+        <p className={`text-xs mt-1 ${product.stok <= 5 ? 'text-red-500 font-semibold' : 'text-gray-500'}`}>
+          Stok: {product.stok} {product.stok <= 5 && '⚠️'}
+        </p>
+        
+        <button 
+          onClick={() => addToCart(product)} 
+          disabled={product.stok <= 0}
+          className={`w-full py-2 rounded-lg mt-2 transition-all ${product.stok <= 0 ? 'bg-gray-400 cursor-not-allowed' : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700'}`}
+        >
+          {product.stok <= 0 ? 'Stok Habis' : '+ Tambah'}
+        </button>
+      </div>
+    ))}
+  </div>
+)}
           </div>
 
           <div className="lg:col-span-1">

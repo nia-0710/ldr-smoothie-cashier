@@ -13,3 +13,95 @@ body {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   min-height: 100vh;
 }
+
+/* Tambahan styling untuk scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+/* ===== RESPONSIVE MOBILE ===== */
+
+/* Untuk layar HP (max width 640px) */
+@media screen and (max-width: 640px) {
+  /* Perbesar touch target */
+  button, 
+  input, 
+  select {
+    font-size: 16px !important; /* Mencegah zoom otomatis di iOS */
+    padding: 12px 16px !important;
+  }
+
+  /* Buat card produk lebih besar untuk di-tap */
+  .bg-white.rounded-xl.shadow-md.p-4 {
+    padding: 16px !important;
+  }
+
+  /* Grid produk jadi 2 kolom di HP */
+  .grid.grid-cols-2.md\:grid-cols-3 {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+  }
+
+  /* Keranjang sticky di HP */
+  .sticky {
+    position: relative !important;
+    top: 0 !important;
+  }
+
+  /* Tombol tab lebih besar */
+  .flex.gap-2 .px-4.py-2 {
+    padding: 10px 14px !important;
+    font-size: 14px !important;
+  }
+
+  /* Ukuran font judul lebih kecil */
+  .text-3xl {
+    font-size: 22px !important;
+  }
+  .text-2xl {
+    font-size: 18px !important;
+  }
+  .text-xl {
+    font-size: 16px !important;
+  }
+
+  /* Card statistik jadi 2 kolom */
+  .grid.grid-cols-1.md\:grid-cols-4 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* Modal jadi full width di HP */
+  .fixed .bg-white.rounded-xl {
+    margin: 16px !important;
+    max-width: 100% !important;
+  }
+}
+
+/* Untuk tablet (max width 768px) */
+@media screen and (max-width: 768px) {
+  .grid.grid-cols-1.lg\:grid-cols-3 {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .lg\:col-span-2 {
+    grid-column: span 1 !important;
+  }
+  
+  .lg\:col-span-1 {
+    grid-column: span 1 !important;
+  }
+}

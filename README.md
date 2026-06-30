@@ -81,3 +81,33 @@ Pastikan laptop/komputer Anda sudah terinstal:
 ```bash
 git clone https://github.com/nia-0710/ldr-smoothie-cashier.git
 cd ldr-smoothie-cashier
+
+## 📁 Struktur Proyek
+
+
+## 👩‍💻 Author
+
+**Nia Syahfa'a**  
+NIM: 101230014  
+ITSNU Pekalongan  
+Fakultas Sains dan Teknologi  
+Program Studi Teknologi Informasi
+
+**Dosen Pembimbing:** Mujibul Hakim, S.Kom, M.M.
+
+---
+
+## 📄 License
+
+MIT License - Copyright (c) 2026 Nia Syahfa'a
+
+---
+
+## 🙏 Ucapan Terima Kasih
+
+Terima kasih telah menggunakan **LDR_Smoothie Cashier System**.  
+Semoga aplikasi ini bermanfaat untuk mengelola bisnis minuman Anda! 🥤✨
+
+---
+
+**Dibangun dengan ❤️ untuk UMKM Indonesia**

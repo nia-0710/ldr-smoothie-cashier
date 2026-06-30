@@ -4,7 +4,7 @@ const pool = mysql.createPool({
   host: 'localhost',
   user: 'root',
   password: '',
-  database: 'ldr_smoothie',
+  database: 'ldr_smoothie',  // ← Pastikan ini 'ldr_smoothie'
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0

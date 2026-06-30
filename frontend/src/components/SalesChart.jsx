@@ -41,22 +41,26 @@ function SalesChart() {
   };
 
   // Format harga dengan proteksi angka terlalu besar
-  const formatPrice = (price) => {
-    if (!price || isNaN(price) || price === 0) return 'Rp 0';
-    // Jika angka terlalu besar (lebih dari 1 Miliar), konversi ke Juta
-    if (price > 1000000000) {
-      return 'Rp ' + (price / 1000000).toFixed(0) + ' Jt';
-    }
-    if (price > 100000000) {
-      return 'Rp ' + (price / 1000).toFixed(0) + ' Rb';
-    }
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(price);
-  };
+const formatPrice = (price) => {
+  // Pastikan price adalah angka
+  const numPrice = Number(price) || 0;
+  
+  // Jika angka terlalu besar (data corrupt), konversi ke format yang lebih sederhana
+  if (numPrice > 1000000000) {
+    return 'Rp ' + (numPrice / 1000000).toFixed(0) + ' Jt';
+  }
+  if (numPrice > 100000000) {
+    return 'Rp ' + (numPrice / 1000).toFixed(0) + ' Rb';
+  }
+  
+  // Format normal untuk angka wajar
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(numPrice);
+};
 
   const getChartTitle = () => {
     switch (chartType) {
@@ -69,17 +73,18 @@ function SalesChart() {
   };
 
   // Hitung nilai maksimum untuk skala grafik (filter angka wajar)
-  const getMaxValue = () => {
-    if (chartData.length === 0) return 100;
-    // Filter angka yang wajar (maksimal 50 juta untuk skala grafik)
-    const validValues = chartData
-      .map(item => item.total_penjualan || 0)
-      .filter(val => val < 50000000 && val > 0);
-    
-    if (validValues.length === 0) return 100;
-    const max = Math.max(...validValues);
-    return max + (max * 0.1);
-  };
+const getMaxValue = () => {
+  if (chartData.length === 0) return 100;
+  
+  // Ambil nilai valid (tidak terlalu besar)
+  const validValues = chartData
+    .map(item => Number(item.total_penjualan) || 0)
+    .filter(val => val < 50000000 && val > 0);
+  
+  if (validValues.length === 0) return 100;
+  const max = Math.max(...validValues);
+  return max + (max * 0.1);
+};
 
   const maxValue = getMaxValue();
 
@@ -165,7 +170,18 @@ function SalesChart() {
                       >
                         {/* Tooltip hover */}
                         <div className="opacity-0 group-hover:opacity-100 transition absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded px-2 py-1 whitespace-nowrap z-10">
-                          {formatPrice(item.total_penjualan)}
+                        {formatPrice(
+  chartData
+    .map(item => Number(item.total_penjualan) || 0)
+    .filter(val => val < 100000000)
+    .reduce((sum, val) => sum + val, 0)
+)}
+{formatPrice(
+  (chartData
+    .map(item => Number(item.total_penjualan) || 0)
+    .filter(val => val < 100000000)
+    .reduce((sum, val) => sum + val, 0) / chartData.length) || 0
+)}
                         </div>
                       </div>
                     </div>
@@ -186,7 +202,11 @@ function SalesChart() {
             <div className="text-center p-3 bg-purple-50 rounded-lg">
               <p className="text-gray-500 text-xs">Total Penjualan</p>
               <p className="font-bold text-purple-600 text-lg">
-                {formatPrice(chartData.reduce((sum, item) => sum + (item.total_penjualan || 0), 0))}
+                {formatPrice(
+  chartData
+    .filter(item => item.total_penjualan < 100000000) // Filter data corrupt
+    .reduce((sum, item) => sum + (item.total_penjualan || 0), 0)
+)}
               </p>
             </div>
             <div className="text-center p-3 bg-blue-50 rounded-lg">
